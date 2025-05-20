@@ -6,14 +6,17 @@ using UnityEngine.Networking;
 public class GameClient : MonoBehaviour
 {
     private const string ServerUrl = "https://teamfluffygames.ru";
-    
+
     [System.Serializable]
     public class Room
     {
         public int id;
         public string name;
         public int players;
+        public string address; // новый
+        public int port;       // новый
     }
+
 
     [System.Serializable]
     public class RoomList
@@ -44,11 +47,11 @@ public class GameClient : MonoBehaviour
             {
                 string json = request.downloadHandler.text;
                 Debug.Log($"[GameClient] Получен ответ от сервера: {json}");
-                
+
                 // Оборачиваем массив в объект для JsonUtility
                 string wrappedJson = "{\"rooms\":" + json + "}";
                 var roomList = JsonUtility.FromJson<RoomList>(wrappedJson);
-                
+
                 Debug.Log($"[GameClient] Найдено комнат: {roomList.rooms.Count}");
                 foreach (var room in roomList.rooms)
                 {
@@ -134,4 +137,4 @@ public class GameClient : MonoBehaviour
             }
         }
     }
-} 
+}
