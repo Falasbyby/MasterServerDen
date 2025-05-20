@@ -56,7 +56,6 @@ public class RoomManagerUI : MonoBehaviour
             ClearRoomButtons();
             foreach (var room in rooms)
             {
-                Debug.Log($"Комната: {room.name} - {room.players}" + " " + room.id);
                 CreateRoomButton(room);
             }
         },
@@ -74,7 +73,7 @@ public class RoomManagerUI : MonoBehaviour
         buttonObj.SetRoom(room, OnRoomButtonClick);
     }
 
-    private void OnRoomButtonClick(GameClient.Room room)
+    private void OnRoomButtonClick(Room room)
     {
         gameClient.JoinRoom(
             room.id,

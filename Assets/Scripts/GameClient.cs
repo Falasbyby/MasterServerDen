@@ -6,6 +6,7 @@ using UnityEngine.Networking;
 public class GameClient : MonoBehaviour
 {
     private const string ServerUrl = "https://teamfluffygames.ru";
+    public RoomConnector roomConnector;
 
     [System.Serializable]
     public class Room
@@ -16,14 +17,11 @@ public class GameClient : MonoBehaviour
         public string address; // новый
         public int port;       // новый
     }
-
-
     [System.Serializable]
     public class RoomList
     {
         public List<Room> rooms;
     }
-
     [System.Serializable]
     public class CreateRoomRequest
     {
@@ -40,7 +38,6 @@ public class GameClient : MonoBehaviour
     {
         using (UnityWebRequest request = UnityWebRequest.Get($"{ServerUrl}/rooms"))
         {
-            Debug.Log("[GameClient] Отправляем GET запрос на получение списка комнат");
             yield return request.SendWebRequest();
 
             if (request.result == UnityWebRequest.Result.Success)
@@ -50,12 +47,21 @@ public class GameClient : MonoBehaviour
 
                 // Оборачиваем массив в объект для JsonUtility
                 string wrappedJson = "{\"rooms\":" + json + "}";
+                
                 var roomList = JsonUtility.FromJson<RoomList>(wrappedJson);
 
                 Debug.Log($"[GameClient] Найдено комнат: {roomList.rooms.Count}");
                 foreach (var room in roomList.rooms)
                 {
-                    Debug.Log($"[GameClient] Комната: ID={room.id}, Название='{room.name}', Игроков={room.players}");
+                    Debug.Log($"[GameClient] Комната: ID={room.id}, Название='{room.name}', Игроков={room.players}, Адрес={room.address}, Порт={room.port}");
+                    if (string.IsNullOrEmpty(room.address))
+                    {
+                        Debug.LogWarning($"[GameClient] Внимание: адрес комнаты {room.id} пустой!");
+                    }
+                    if (room.port == 0)
+                    {
+                        Debug.LogWarning($"[GameClient] Внимание: порт комнаты {room.id} равен 0!");
+                    }
                 }
                 onSuccess?.Invoke(roomList.rooms);
             }
@@ -75,7 +81,10 @@ public class GameClient : MonoBehaviour
 
     private IEnumerator CreateRoomCoroutine(string roomName, System.Action<Room> onSuccess, System.Action<string> onError)
     {
-        var createRequest = new CreateRoomRequest { Name = roomName };
+        var createRequest = new CreateRoomRequest
+        {
+            Name = roomName,
+        };
         string json = JsonUtility.ToJson(createRequest);
         Debug.Log($"[GameClient] Отправляем POST запрос на создание комнаты: {json}");
 
@@ -94,7 +103,11 @@ public class GameClient : MonoBehaviour
                 string responseJson = request.downloadHandler.text;
                 Debug.Log($"[GameClient] Получен ответ от сервера: {responseJson}");
                 var room = JsonUtility.FromJson<Room>(responseJson);
-                Debug.Log($"[GameClient] Комната успешно создана: ID={room.id}, Название='{room.name}', Игроков={room.players}");
+                Debug.Log($"[GameClient] После десериализации: ID={room.id}, Name={room.name}, Address={room.address}, Port={room.port}");
+                if (string.IsNullOrEmpty(room.address))
+                {
+                    Debug.LogWarning($"[GameClient] Внимание: адрес комнаты {room.id} пустой!");
+                }
                 onSuccess?.Invoke(room);
             }
             else
@@ -107,7 +120,6 @@ public class GameClient : MonoBehaviour
 
     public void JoinRoom(int roomId, System.Action<Room> onSuccess, System.Action<string> onError)
     {
-        Debug.Log($"[GameClient] Пытаемся присоединиться к комнате с ID: {roomId}");
         StartCoroutine(JoinRoomCoroutine(roomId, onSuccess, onError));
     }
 
@@ -119,16 +131,14 @@ public class GameClient : MonoBehaviour
             request.SetRequestHeader("Content-Type", "application/json");
             request.SetRequestHeader("Accept", "application/json");
 
-            Debug.Log($"[GameClient] Отправляем POST запрос на присоединение к комнате {roomId}");
             yield return request.SendWebRequest();
 
             if (request.result == UnityWebRequest.Result.Success)
             {
                 string json = request.downloadHandler.text;
-                Debug.Log($"[GameClient] Получен ответ от сервера: {json}");
                 var room = JsonUtility.FromJson<Room>(json);
-                Debug.Log($"[GameClient] Успешно присоединились к комнате: ID={room.id}, Название='{room.name}', Игроков={room.players}");
                 onSuccess?.Invoke(room);
+                roomConnector.ConnectToRoom(room);
             }
             else
             {
