@@ -22,10 +22,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog(); // Использование Serilog
 builder.Services.AddCors();
 
-var serverIp = "ХУЙ";
+var serverIp = "127.0.0.1";
 var basePort = builder.Configuration.GetValue<int>("BasePort", 5000);
 
-Log.Information("Сервер запущен на {Ip}:{Port}", "teamfluffygames.ru", basePort);
+Log.Information("Сервер запущен на {Ip}:{Port}", serverIp, basePort);
 
 var app = builder.Build();
 
@@ -40,8 +40,8 @@ var idCounter = 1;
 
 Process StartRoomProcess(int roomId, string roomName, int port)
 {
-    var arguments = $"{roomId} \"{roomName}\" {serverIp} {port}";
-    Log.Information("Запуск комнаты {RoomId} на {Ip}:{Port}", roomId, serverIp, port);
+    var arguments = $"{roomId} \"{roomName}\" {"teamfluffygames.ru"} {port}";
+    Log.Information("Запуск комнаты {RoomId} на {Ip}:{Port}", roomId, "teamfluffygames.ru", port);
     Log.Information("Аргументы запуска: {Arguments}", arguments);
     
     var startInfo = new ProcessStartInfo
@@ -97,7 +97,7 @@ app.MapPost("/rooms", async (HttpContext http) =>
         Id = idCounter++,
         Name = body?.Name ?? $"Room {idCounter}",
         Players = 0,
-        Address = "ХУЙ222",
+        Address = "teamfluffygames.ru",
         Port = port
     };
 
@@ -107,7 +107,7 @@ app.MapPost("/rooms", async (HttpContext http) =>
     rooms[room.Id] = room;
     Log.Information("Комната добавлена в словарь комнат");
 
-    var process = StartRoomProcess(room.Id, room.Name, room.Address,room.Port);
+    var process = StartRoomProcess(room.Id, room.Name ?? "Room", room.Port);
     if (process == null)
     {
         Log.Error("Не удалось запустить процесс комнаты!");
@@ -156,10 +156,10 @@ app.Run();
 record Room
 {
     public int Id { get; set; }
-    public string Name { get; set; }
+    public string? Name { get; set; }
     public int Players { get; set; }
-    public string Address { get; set; }
+    public string? Address { get; set; }
     public int Port { get; set; }
 }
 
-record CreateRoomRequest(string Name); 
+record CreateRoomRequest(string? Name); 

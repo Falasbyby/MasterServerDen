@@ -79,8 +79,8 @@ public class RoomManagerUI : MonoBehaviour
             room.id,
             onSuccess: (updatedRoom) =>
             {
-                Debug.Log($"Присоединились к комнате: {updatedRoom.name}");
-                RefreshRooms();
+                //Debug.Log($"Присоединились к комнате: {updatedRoom.name}");
+                //RefreshRooms();
             },
             onError: (error) =>
             {

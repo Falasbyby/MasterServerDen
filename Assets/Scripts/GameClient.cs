@@ -14,8 +14,8 @@ public class GameClient : MonoBehaviour
         public int id;
         public string name;
         public int players;
-        public string address; // новый
-        public int port;       // новый
+        public string address; 
+        public int port;       
     }
     [System.Serializable]
     public class RoomList
